@@ -1,0 +1,31 @@
+#!/bin/env perl
+
+use strict;
+use warnings;
+use Cwd 'abs_path';
+use File::Basename;
+use Getopt::Long qw(:config pass_through);
+my $SCRIPT_DIR=dirname(abs_path($0));
+my $CLASS_DIR="$SCRIPT_DIR/classes";
+my %opt;
+GetOptions(\%opt,"m=s","a");
+my $JARS="$CLASS_DIR/commons/commons-math3-3.1.1.jar:$CLASS_DIR/commons/commons-cli-1.2.jar";
+my $DIRS="$CLASS_DIR/BNPPhase:$CLASS_DIR/libnp:$CLASS_DIR/genetics";
+my $SCALA="$CLASS_DIR/scala/scala-library.jar";
+my $memory=exists$opt{m}?$opt{m}:"1024M";
+my $assert=exists$opt{a}?"-ea":"";
+print <<'EOT';
+#  _________. ______. __________________.__                          
+# <\______   \\      \\____ _ \.___ _   |  |__ ____.    _____. .__.  
+#   |  _/| ._//   ^   \|     _/|     ___|  |  \\__  \  /  ____/ __ \ 
+#   |   \|   /    |    |>   |  \    |   |   Y  \/ __ \_\___ \\  ___/ 
+#   |______  \____|__  |\___/   \___/   |___|  (____  /____  >\___  >
+#          \/        \/                      \/     \/     \/     \/  v1.2
+#
+# Copyright (c) 2016, Lloyd T. Elliott and Yee Whye Teh.
+#
+# All rights reserved.
+
+EOT
+
+system "java $assert -XX:+UseSerialGC -Xmx$memory -cp $JARS:$DIRS:$SCALA hdp.hdp -fQuiet false @ARGV\n";

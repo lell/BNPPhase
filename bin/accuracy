@@ -1,0 +1,75 @@
+#!/usr/bin/perl -w
+
+use strict;
+use Getopt::Std;
+
+die "Usage: accuracy test_file [-r] [train_file1 [train_file2 ...]]\n" if @ARGV==0;
+
+my %opts;
+getopts('r', \%opts);
+
+sub l($) {
+  my $h = `cat $_[0]`;
+  $h =~ s/haplotype [a-zA-Z0-9]+//g;
+  $h =~ s/\-1/?/g;
+  $h =~ s/null/?/g;
+  $h =~ s/nan/?/g;
+  $h =~ s/NaN/?/g;
+  $h =~ s/NA/?/g;
+  $h =~ s/\s//g;
+  die if not $h =~ /^[01\?]*$/;
+  return $h;
+}
+
+my $h1 = &l($ARGV[0]);
+foreach my $file (1 .. $#ARGV) {
+  if (not(-e $ARGV[$file])) {
+    print "X\n";
+    next;
+  }
+
+  my $h2 = &l($ARGV[$file]);
+  if ($opts{r} && (length($h2) % length($h1) == 0)) {
+    my $mult = length($h2) / length($h1);
+    my $new_h2 = "";
+    my $l = length($h1)-1;
+    for my $i (0..$l) {
+      my $t = substr($h1, $i, 1);
+      my $sum = 0.0;
+
+      if ($t ne "?") {
+        for my $j (0.. ($mult-1)) {
+          $sum = $sum + substr($h2, $i + $j*($l+1), 1)/$mult;
+        }
+        $sum = $sum > 0.5 ? 1:0;
+      } else {
+        $sum = "?";
+      }
+
+      $new_h2 .= $sum;
+    }
+    $h2 = $new_h2;
+  }
+
+  #print "$h1\n$h2\n";
+
+  if(length($h1) != length($h2)) {
+    print "X\n";
+    next;
+  }
+  my $l = length($h1)-1;
+  my $n = 0;
+  my $d = 0;
+  for my $i (0..$l) {
+    my $a1 = substr($h1, $i, 1);
+    my $a2 = substr($h2, $i, 1);
+    if ($a1 ne '?') {
+      #die "[$a1] [$a2]\n" if $a2 eq '?';
+      die "?\n" if $a2 eq '?';
+      $n += ($a1 eq $a2);
+      $d += 1;
+    }
+  }
+  if ($d == 0) { print "?\n"; }
+  else { print sprintf("%0.8f", $n/$d) . "\n"; }
+}
